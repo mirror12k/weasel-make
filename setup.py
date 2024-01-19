@@ -4,10 +4,14 @@ import os
 
 class CustomInstallCommand(install):
     """Customized setuptools install command to install bash completions."""
+    def __init__(self, dist):
+        super(install, self).__init__(dist)
+        self.__post_install()
+
     def run(self):
         # Call the standard setuptools install command
         install.run(self)
-
+    def __post_install(self):
         # Install the bash completion script
         bash_completion_dir = os.path.expanduser('/etc/bash_completion.d')
         weasel_completion_script = 'weasel_autocomplete.sh'
@@ -51,7 +55,7 @@ class CustomInstallCommand(install):
 
 setup(
    name='weasel-make',
-   version='0.1.1',
+   version='0.1.2',
    packages=find_packages(),
    install_requires=[],
    entry_points={
