@@ -64,7 +64,7 @@ def group_makefile_commands(lines):
 			# print(group_word, groups[group_word])
 			words = filter(lambda s: s != '', re.split(r'\s+', l.split(':')[1]))
 			for word in words:
-				groups[group_word].append('weasel ' + word)
+				groups[group_word].append(sys.argv[0] + ' ' + word)
 		elif re.match(r"^\s*$", l):
 			pass
 		elif l.startswith('\t'):
