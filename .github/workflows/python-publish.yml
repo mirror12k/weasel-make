@@ -27,6 +27,7 @@ jobs:
       - name: Scan Results Status
         if: steps.trufflehog.outcome == 'failure'
         run: exit 1
+
   build-and-publish:
     runs-on: ubuntu-latest
     steps:
@@ -41,7 +42,7 @@ jobs:
         pip install setuptools wheel twine pygments requests
     - name: Run tests
       run: |
-        python run_unittest.py
+        python run_unittests.py
     - name: Build and check package
       run: |
         python setup.py sdist bdist_wheel
