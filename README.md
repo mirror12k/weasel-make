@@ -17,6 +17,13 @@ Install easily with `pip install weasel-make`. If you are installing without `su
 echo 'export PATH=$(python3 -m site --user-base)/bin:$PATH' >> ~/.bashrc
 ```
 
+To install auto-completions for `weasel`, also execute the following:
+
+```bash
+echo 'source <(weasel --bash-autocompletions-source)' >> ~/.bashrc
+```
+
+
 ## Usage
 
 To execute targets from your Makefile with Weasel Make, use the `weasel` command followed by your target names:

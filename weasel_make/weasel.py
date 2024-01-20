@@ -178,18 +178,41 @@ def main():
 
 		# parse arguments
 		parser = argparse.ArgumentParser(prog='weasel', description='An obscureful build tool')
-		parser.add_argument('targets', metavar='target', type=str, nargs='+',
+		parser.add_argument('targets', metavar='target', type=str, nargs='*',
 							help='list of targets to run')
-		parser.add_argument('-o', '--output')
+		parser.add_argument('-o', '--output', help='specifies a filepath to duplicate output to')
+		parser.add_argument('-v', '--version', action='store_true', help='prints the weasel-make version')
+		parser.add_argument('--bash-autocompletions-source', action='store_true', help='prints a static bash script for weasel auto-completions')
 		args = parser.parse_args()
 
-		# print("output:", args.output, ", targets:", args.targets)
 		if args.output is not None:
 			recording_file = open(args.output, 'a')
 
-		groups = load_makefile('Makefile')
-		for arg in args.targets:
-			execute_makefile_commands(groups[arg])
+		if args.bash_autocompletions_source:
+			print('''
+_weasel_autocomplete()
+{
+	local cur opts makefile_opts
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	makefile_opts=$(cat Makefile | grep -Po '^\\S+(?=:)' | xargs)
+	opts="$makefile_opts"
+	COMPREPLY=( $(compgen -W "$opts" -- "$cur" | xargs) )
+	return 0
+}
+complete -F _weasel_autocomplete weasel
+''')
+			sys.exit(0)
+
+		elif args.version:
+			print("weasel-make v0.1.3")
+			sys.exit(0)
+
+		elif args.targets:
+			groups = load_makefile('Makefile')
+			for arg in args.targets:
+				execute_makefile_commands(groups[arg])
+		else:
+			parser.error("the following arguments are required: target")
 		sys.exit(0)
 
 	except KeyboardInterrupt:
