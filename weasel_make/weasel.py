@@ -182,6 +182,7 @@ def main():
 							help='list of targets to run')
 		parser.add_argument('-o', '--output', help='specifies a filepath to duplicate output to')
 		parser.add_argument('-v', '--version', action='store_true', help='prints the weasel-make version')
+		parser.add_argument('-f', '--file', default='Makefile', help='specifies the makefile path to use')
 		parser.add_argument('--bash-autocompletions-source', action='store_true', help='prints a static bash script for weasel auto-completions')
 		args = parser.parse_args()
 
@@ -208,7 +209,7 @@ complete -F _weasel_autocomplete weasel
 			sys.exit(0)
 
 		elif args.targets:
-			groups = load_makefile('Makefile')
+			groups = load_makefile(args.file)
 			for arg in args.targets:
 				execute_makefile_commands(groups[arg])
 		else:
