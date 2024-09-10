@@ -103,11 +103,15 @@ def execute_shell_command(command, log_length=40):
 			if len(last_lines) > 0:
 				print("\033[" + str(len(last_lines)) + "A", end='')
 
-			if len(line) > console_width:
-				line = line[:console_width]
-			last_lines.append(line)
-			if len(last_lines) > log_length:
+			# Break line into chunks of console_width
+			line_chunks = [line[i:i + console_width] for i in range(0, len(line), max(console_width, 20))]
+
+			# Append each chunk to the last_lines
+			for chunk in line_chunks:
+				last_lines.append(chunk)
+			while len(last_lines) > log_length:
 				last_lines = last_lines[1:]
+
 			for l in last_lines:
 				print("\033[K" + l)
 		else:
@@ -205,7 +209,7 @@ complete -F _weasel_autocomplete weasel
 			sys.exit(0)
 
 		elif args.version:
-			print("weasel-make v0.1.3")
+			print("weasel-make v0.2.0")
 			sys.exit(0)
 
 		elif args.targets:
