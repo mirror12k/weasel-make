@@ -7,8 +7,6 @@ import re
 import argparse
 import math
 
-
-
 local_vars = {}
 recording_file = None
 filter_secrets = True
@@ -159,6 +157,10 @@ def execute_makefile_commands(commands):
 				sys.exit(status)
 
 def execute_makefile_group(groups, groupname):
+	if groups.get(groupname) is None:
+		print(f"Error: Target '{groupname}' not found in the makefile.", file=sys.stderr)
+		sys.exit(1)
+
 	for group_word in groups[groupname]['group_words']:
 		execute_makefile_group(groups, group_word)
 	execute_makefile_commands(groups[groupname]['commands'])

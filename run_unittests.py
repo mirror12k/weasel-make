@@ -88,6 +88,31 @@ class TestWeaselMake(unittest.TestCase):
 		self.assertIn("Recursion step 5", result.stdout)
 		self.assertEqual(result.returncode, 0)
 
+	def test_custom_makefile(self):
+		"""Positive test case that verifies using a custom makefile with the -f option."""
+		# Create a temporary custom makefile
+		custom_makefile_content = """
+custom_target:
+	echo "Custom makefile in action!"
+"""
+		with open('CustomMakefile', 'w') as f:
+			f.write(custom_makefile_content)
+
+		# Execute the command with the custom makefile
+		result = subprocess.run(['../weasel_make/weasel.py', '-f', 'CustomMakefile', 'custom_target'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+		# Check if the output contains the expected string
+		self.assertIn("Custom makefile in action!", result.stdout)
+		self.assertEqual(result.returncode, 0)
+
+		# Clean up
+		os.remove('CustomMakefile')
+
+	def test_target_not_found(self):
+		"""Negative test case that verifies the error message when a target is not found."""
+		result = subprocess.run(['../weasel_make/weasel.py', 'non_existent_target'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+		self.assertIn("Error: Target 'non_existent_target' not found in the makefile.", result.stderr)
+		self.assertEqual(result.returncode, 1)
+
 
 if __name__ == '__main__':
 	os.chdir('test')
