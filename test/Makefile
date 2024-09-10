@@ -16,3 +16,12 @@ another_command:
 bad_command:
 	false
 	echo "nope..."
+
+
+recursive_group: step1
+step1: step2
+step2: step3
+step3: step4
+step4: step5
+step5:
+	echo "Recursion step 5"

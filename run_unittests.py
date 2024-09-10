@@ -78,6 +78,15 @@ class TestWeaselMake(unittest.TestCase):
 		self.assertNotIn("\033[1A\033[K", output)
 		self.assertEqual(result.returncode, 1)
 
+	def test_recursive_group_command(self):
+		"""Positive test case that verifies recursive group command executed 5 times."""
+
+		# Execute the recursive group command
+		result = subprocess.run(['../weasel_make/weasel.py', 'recursive_group'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+		
+		# Check if the output contains the expected string
+		self.assertIn("Recursion step 5", result.stdout)
+		self.assertEqual(result.returncode, 0)
 
 
 if __name__ == '__main__':

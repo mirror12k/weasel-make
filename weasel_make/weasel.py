@@ -55,36 +55,30 @@ def process_lines(lines):
 	return lines
 
 def group_makefile_commands(lines):
-	groups = { '': [] }
+	groups = { '': {'group_words': [], 'commands': []} }
 	group_word = None
 	for l in lines:
 		if re.match(r"^\w+:\s*(\w+(\s+\w+)*)?\s*$", l):
 			group_word = l.split(':')[0]
-			groups[group_word] = groups.get(group_word) or []
-			# print(group_word, groups[group_word])
+			if group_word not in groups:
+				groups[group_word] = {'group_words': [], 'commands': []}
 			words = filter(lambda s: s != '', re.split(r'\s+', l.split(':')[1]))
 			for word in words:
-				groups[group_word].append(sys.argv[0] + ' ' + word)
+				groups[group_word]['group_words'].append(word)
 		elif re.match(r"^\s*$", l):
 			pass
 		elif l.startswith('\t'):
-			# print(l)
-			groups[group_word].append(l[1:].strip())
+			groups[group_word]['commands'].append(l[1:].strip())
 		else:
-			groups[''].append(l.strip())
+			groups['']['commands'].append(l.strip())
 
 	return groups
-
 
 def load_makefile(filepath):
 	with open(filepath, 'r') as f:
 		lines = process_lines(f.readlines())
-	# print(lines)
 	groups = group_makefile_commands(lines)
-	# print(groups)
-
-	execute_makefile_precommands(groups[''])
-
+	execute_makefile_precommands(groups['']['commands'])
 	return groups
 
 def execute_shell_command(command, log_length=40):
@@ -138,21 +132,19 @@ def execute_makefile_precommands(commands):
 	for command in commands:
 		if m := re.match(r"^(\w+)\s*=\s*(.*)$", command):
 			local_vars[m.group(1)] = m.group(2)
-			# print("set var:", m.group(1), '=', m.group(2))
 		elif m := re.match(r"^include\s*(.+)$", command):
 			load_makefile(m.group(1))
 		elif command == 'export':
 			for key in local_vars:
 				os.environ[key] = local_vars[key]
 		else:
-			raise 'invalid command in make precommands: ' + command
+			raise Exception('invalid command in make precommands: ' + command)
 	return True
 
 def execute_makefile_commands(commands):
 	for command in commands:
 		if m := re.match(r"^(\w+)\s*=\s*(.*)$", command):
 			local_vars[m.group(1)] = m.group(2)
-			# print("set var:", m.group(1), '=', m.group(2))
 		else:
 			ignore_status = False
 			if command.startswith('-'):
@@ -165,6 +157,11 @@ def execute_makefile_commands(commands):
 				else:
 					print('error: "' + command + '" exited with status ' + str(status))
 				sys.exit(status)
+
+def execute_makefile_group(groups, groupname):
+	for group_word in groups[groupname]['group_words']:
+		execute_makefile_group(groups, group_word)
+	execute_makefile_commands(groups[groupname]['commands'])
 
 def main():
 	global recording_file, istty, console_width
@@ -212,7 +209,7 @@ complete -F _weasel_autocomplete weasel
 		elif args.targets:
 			groups = load_makefile(args.file)
 			for arg in args.targets:
-				execute_makefile_commands(groups[arg])
+				execute_makefile_group(groups, arg)
 		else:
 			parser.error("the following arguments are required: target")
 		sys.exit(0)
