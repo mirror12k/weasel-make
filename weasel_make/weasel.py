@@ -205,7 +205,7 @@ complete -F _weasel_autocomplete weasel
 			sys.exit(0)
 
 		elif args.version:
-			print("weasel-make v0.2.0")
+			print("weasel-make v0.2.1")
 			sys.exit(0)
 
 		elif args.targets:
