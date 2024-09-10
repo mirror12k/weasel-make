@@ -82,11 +82,7 @@ def load_makefile(filepath):
 def execute_shell_command(command, log_length=40):
 	# run the command with pipefail on
 	# nosemgrep
-	proc = subprocess.Popen('bash -o pipefail -c "' + command + '" 2>&1',
-			shell=True,
-			stdout=subprocess.PIPE,
-			stderr=subprocess.PIPE,
-			universal_newlines=True)
+	proc = subprocess.Popen('bash -o pipefail -c "' + command + '" 2>&1', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
 	last_lines = []
 
