@@ -119,6 +119,7 @@ def execute_shell_command(command, log_length=40):
 	# if success, erase output and print ok
 	if status == 0:
 		if istty:
+			print("\r\033[K", end='')
 			for i in range(len(last_lines)):
 				print("\033[1A\033[K", end='')
 			print("\33[1m\33[92m" + command + " - ok!" + "\033[0m")
