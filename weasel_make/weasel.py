@@ -84,7 +84,7 @@ def execute_shell_command(command, log_length=40):
 	# nosemgrep
 	proc = subprocess.Popen('bash -o pipefail -c "' + command + '" 2>&1', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
-	last_lines = []
+	display_buffer = []
 
 	# read output line by line
 	for line in iter(proc.stdout.readline, ""):
@@ -96,19 +96,19 @@ def execute_shell_command(command, log_length=40):
 			if filter_secrets:
 				line = filter_secrets_from_string(line)
 
-			if len(last_lines) > 0:
-				print("\033[" + str(len(last_lines)) + "A", end='')
+			if len(display_buffer) > 0:
+				print("\033[" + str(len(display_buffer)) + "A", end='')
 
 			# Break line into chunks of console_width
 			line_chunks = [line[i:i + console_width] for i in range(0, len(line), max(console_width, 20))]
 
-			# Append each chunk to the last_lines
+			# Append each chunk to the display_buffer
 			for chunk in line_chunks:
-				last_lines.append(chunk)
-			while len(last_lines) > log_length:
-				last_lines = last_lines[1:]
+				display_buffer.append(chunk)
+			while len(display_buffer) > log_length:
+				display_buffer = display_buffer[1:]
 
-			for l in last_lines:
+			for l in display_buffer:
 				print("\033[K" + l)
 		else:
 			print(line, end='')
@@ -120,7 +120,7 @@ def execute_shell_command(command, log_length=40):
 	if status == 0:
 		if istty:
 			print("\r\033[K", end='')
-			for i in range(len(last_lines)):
+			for i in range(len(display_buffer)):
 				print("\033[1A\033[K", end='')
 			print("\33[1m\33[92m" + command + " - ok!" + "\033[0m")
 		else:
