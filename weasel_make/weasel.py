@@ -166,6 +166,11 @@ def execute_makefile_group(groups, groupname):
 		execute_makefile_group(groups, group_word)
 	execute_makefile_commands(groups[groupname]['commands'])
 
+def run_weasel_make(filepath, grouptargets):
+	groups = load_makefile(filepath)
+	for arg in grouptargets:
+		execute_makefile_group(groups, arg)
+
 def main():
 	global recording_file, istty, console_width
 
@@ -204,15 +209,15 @@ _weasel_autocomplete()
 complete -F _weasel_autocomplete weasel
 ''')
 			sys.exit(0)
+			return
 
-		elif args.version:
+		if args.version:
 			print("weasel-make v0.2.1")
 			sys.exit(0)
+			return
 
-		elif args.targets:
-			groups = load_makefile(args.file)
-			for arg in args.targets:
-				execute_makefile_group(groups, arg)
+		if args.targets:
+			run_weasel_make(args.file, args.targets)
 		else:
 			parser.error("the following arguments are required: target")
 		sys.exit(0)
