@@ -287,7 +287,7 @@ complete -F _weasel_autocomplete weasel
 			return
 
 		if args.version:
-			print("weasel-make v0.2.1")
+			print("weasel-make v0.3.0")
 			sys.exit(0)
 			return
 
