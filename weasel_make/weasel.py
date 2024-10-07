@@ -14,6 +14,7 @@ recording_file = None
 filter_secrets = True
 istty = False
 console_width = 100
+max_history = 1000
 
 def calculate_shannon_entropy(s):
 	entropy = 0.0
@@ -136,6 +137,9 @@ def execute_shell_command(command):
 			# Append each chunk to the history
 			for chunk in line_chunks:
 				display_history.append(chunk)
+				# cap history length at max_history
+				if len(display_history) > max_history:
+					display_history = display_history[1:]
 
 			redisplay_history()
 
