@@ -3,7 +3,7 @@ import os
 
 setup(
    name='weasel-make',
-   version='0.3.0',
+   version='0.3.1',
    packages=find_packages(),
    install_requires=[],
    entry_points={
