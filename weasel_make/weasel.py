@@ -219,6 +219,7 @@ def capture_input():
 			read_list, _, _ = select.select([sys.stdin], [], [], 0.05)
 			if read_list:
 				char = sys.stdin.read(1)
+				# check for special characters
 				if char == '\x03':  # Ctrl+C
 					break
 				elif char == '\x1b':  # Arrow keys
@@ -230,10 +231,14 @@ def capture_input():
 					clean_display()
 					redisplay_history()
 
+				# else pass the character to an existing process
 				elif proc:
 					proc.stdin.write(char)
 					proc.stdin.flush()
 					print(char, end='', flush=True)
+
+					if char == '\n':  # Enter key resets the display offset
+						display_offset = 0
 	finally:
 		termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
 
