@@ -6,6 +6,8 @@ import subprocess
 import re
 import argparse
 import math
+import tty
+import termios
 
 local_vars = {}
 recording_file = None
@@ -79,12 +81,42 @@ def load_makefile(filepath):
 	execute_makefile_precommands(groups['']['commands'])
 	return groups
 
-def execute_shell_command(command, log_length=40):
+display_offset = 0
+display_buffer = []
+display_history = []
+log_length=40
+
+def clean_display():
+	global display_offset, display_buffer, display_history
+	if len(display_buffer) > 0:
+		print("\033[" + str(len(display_buffer)) + "A", end='')
+
+def clean_display2():
+	global display_offset, display_buffer, display_history
+	if len(display_buffer) > 0:
+		print("\033[" + str(len(display_buffer-1)) + "A", end='')
+
+def redisplay_history():
+	global display_offset, display_buffer, display_history
+
+	if len(display_history) > log_length:
+		display_buffer = display_history[:len(display_history)-display_offset][-log_length:]
+	else:
+		display_buffer = display_history
+
+	for l in display_buffer:
+		print("\033[K" + l)
+
+def execute_shell_command(command):
+	global log_length
+	global proc, display_offset, display_buffer, display_history
 	# run the command with pipefail on
 	# nosemgrep
-	proc = subprocess.Popen('bash -o pipefail -c "' + command + '" 2>&1', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+	proc = subprocess.Popen('bash -o pipefail -c "' + command + '" 2>&1', shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
+	display_offset = 0
 	display_buffer = []
+	display_history = []
 
 	# read output line by line
 	for line in iter(proc.stdout.readline, ""):
@@ -95,26 +127,24 @@ def execute_shell_command(command, log_length=40):
 			line = line.replace('\n', '')
 			if filter_secrets:
 				line = filter_secrets_from_string(line)
-
-			if len(display_buffer) > 0:
-				print("\033[" + str(len(display_buffer)) + "A", end='')
-
 			# Break line into chunks of console_width
 			line_chunks = [line[i:i + console_width] for i in range(0, len(line), max(console_width, 20))]
 
-			# Append each chunk to the display_buffer
-			for chunk in line_chunks:
-				display_buffer.append(chunk)
-			while len(display_buffer) > log_length:
-				display_buffer = display_buffer[1:]
+			# i have no clue why the order is like this, but it breaks otherwise
+			clean_display()
 
-			for l in display_buffer:
-				print("\033[K" + l)
+			# Append each chunk to the history
+			for chunk in line_chunks:
+				display_history.append(chunk)
+
+			redisplay_history()
+
 		else:
 			print(line, end='')
 
 	# wait for status
 	status = proc.wait()
+	proc = None
 
 	# if success, erase output and print ok
 	if status == 0:
@@ -166,10 +196,55 @@ def execute_makefile_group(groups, groupname):
 		execute_makefile_group(groups, group_word)
 	execute_makefile_commands(groups[groupname]['commands'])
 
+import threading
+import select
+
+stop_input_thread = False
+
+def capture_input():
+	global istty, proc, stop_input_thread, display_offset, display_buffer, display_history
+	if not istty:
+		return
+
+	stop_input_thread = False
+
+	old_settings = termios.tcgetattr(sys.stdin)
+	try:
+		tty.setcbreak(sys.stdin.fileno())
+		while not stop_input_thread:
+			read_list, _, _ = select.select([sys.stdin], [], [], 0.05)
+			if read_list:
+				char = sys.stdin.read(1)
+				if char == '\x03':  # Ctrl+C
+					break
+				elif char == '\x1b':  # Arrow keys
+					char += sys.stdin.read(2)
+					if char == '\x1b[A':  # Up arrow
+						display_offset = min(len(display_history) - 1, display_offset + 1)
+					elif char == '\x1b[B':  # Down arrow
+						display_offset = max(0, display_offset - 1)
+					clean_display()
+					redisplay_history()
+
+				elif proc:
+					proc.stdin.write(char)
+					proc.stdin.flush()
+					print(char, end='', flush=True)
+	finally:
+		termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+
+
 def run_weasel_make(filepath, grouptargets):
+	global istty, stop_input_thread
 	groups = load_makefile(filepath)
-	for arg in grouptargets:
-		execute_makefile_group(groups, arg)
+	input_thread = threading.Thread(target=capture_input)
+	input_thread.start()
+	try:
+		for arg in grouptargets:
+			execute_makefile_group(groups, arg)
+	finally:
+		stop_input_thread = True
+		input_thread.join()
 
 def main():
 	global recording_file, istty, console_width

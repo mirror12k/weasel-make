@@ -25,3 +25,6 @@ step3: step4
 step4: step5
 step5:
 	echo "Recursion step 5"
+
+bashscript:
+	./test/scripttest.sh
